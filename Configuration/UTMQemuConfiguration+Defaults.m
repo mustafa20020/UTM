@@ -136,25 +136,17 @@
     [self loadDisplayDefaultsForTarget:target architecture:architecture];
     [self loadSoundDefaultsForTarget:target architecture:architecture];
     [self loadNetworkDefaultsForTarget:target architecture:architecture];
-    if ([target hasPrefix:@"pc"] || [target hasPrefix:@"q35"]) {
-        self.shareClipboardEnabled = YES;
-        self.shareDirectoryEnabled = YES;
-        self.systemBootUefi = YES;
-        self.systemRngEnabled = YES;
-    } else if ([target isEqualToString:@"virt"] || [target hasPrefix:@"virt-"]) {
-        self.shareClipboardEnabled = YES;
-        self.shareDirectoryEnabled = YES;
-        self.usb3Support = NO;
-        self.systemBootUefi = YES;
-        self.systemRngEnabled = YES;
-    } else if ([target isEqualToString:@"isapc"]) {
-        self.inputLegacy = YES; // no USB support
-    } else {
-        self.shareClipboardEnabled = NO;
-        self.shareDirectoryEnabled = NO;
-        self.systemBootUefi = NO;
-        self.systemRngEnabled = NO;
-    }
+    // first set the defaults
+    self.inputLegacy = NO;
+    self.forcePs2Controller = NO;
+    self.shareClipboardEnabled = NO;
+    self.shareDirectoryEnabled = NO;
+    self.usb3Support = NO;
+    self.systemBootUefi = NO;
+    self.systemRngEnabled = NO;
+    self.useHypervisor = self.defaultUseHypervisor;
+    self.systemCPU = @"default";
+    // next override based on architecture
     if (![architecture isEqualToString:@"arm"] &&
         ![architecture isEqualToString:@"aarch64"] &&
         ![architecture isEqualToString:@"i386"] &&
@@ -162,13 +154,26 @@
         // disable UEFI on unsupported architectures
         self.systemBootUefi = NO;
     }
-    self.useHypervisor = self.defaultUseHypervisor;
-    // override hypervisor setting for older PC targets
+    // finally override based on target
     if ([target hasPrefix:@"pc"]) {
+        // override hypervisor setting for older PC targets
         self.useHypervisor = NO;
     }
-    self.systemCPU = @"default";
-    self.forcePs2Controller = NO;
+    if ([target hasPrefix:@"pc"] || [target hasPrefix:@"q35"]) {
+        self.shareClipboardEnabled = YES;
+        self.shareDirectoryEnabled = YES;
+        self.usb3Support = NO; // older OS like Windows 7 do not support it
+        self.systemBootUefi = YES;
+        self.systemRngEnabled = YES;
+    } else if ([target isEqualToString:@"virt"] || [target hasPrefix:@"virt-"]) {
+        self.shareClipboardEnabled = YES;
+        self.shareDirectoryEnabled = YES;
+        self.usb3Support = YES;
+        self.systemBootUefi = YES;
+        self.systemRngEnabled = YES;
+    } else if ([target isEqualToString:@"isapc"]) {
+        self.inputLegacy = YES; // no USB support
+    }
 }
 
 + (NSString *)defaultDriveInterfaceForTarget:(NSString *)target architecture:(NSString *)architecture type:(UTMDiskImageType)type {
